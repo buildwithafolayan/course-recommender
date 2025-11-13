@@ -1,11 +1,31 @@
-course_name,min_jamb,required_subjects,faculty
-Computer Science,230,Mathematics Physics English,Science
-Medicine and Surgery,280,Biology Physics Chemistry,Clinical Sciences
-Law,250,Literature Government English,Law
-Mechanical Engineering,240,Mathematics Physics Chemistry,Technology
-Accounting,220,Mathematics Economics English,Social Sciences
-Mass Communication,210,Literature Government English,Arts
-Pharmacy,260,Biology Physics Chemistry,Pharmacy
-Economics,220,Mathematics Economics English,Economics
-Architecture,230,Mathematics Physics Technical-Drawing,Environmental Design
-Nursing,250,Biology Physics Chemistry,Clinical Sciences
+course_name,min_jamb,required_subjects,faculty,duration,careers
+Computer Science,230,Mathematics Physics English,Science,4 Years,Software Engineer Data Scientist
+Medicine and Surgery,280,Biology Physics Chemistry,Clinical Sciences,6 Years,Doctor Surgeon
+Law,250,Literature Government English,Law,5 Years,Lawyer Judge
+Mechanical Engineering,240,Mathematics Physics Chemistry,Technology,5 Years,Mechanical Engineer
+Electrical Engineering,240,Mathematics Physics Chemistry,Technology,5 Years,Electrical Engineer Power-Systems
+Civil Engineering,235,Mathematics Physics Chemistry,Technology,5 Years,Civil Engineer Construction-Manager
+Accounting,220,Mathematics Economics English,Social Sciences,4 Years,Chartered Accountant Auditor
+Economics,220,Mathematics Economics English,Economics,4 Years,Economist Financial-Analyst
+Mass Communication,210,Literature Government English,Arts,4 Years,Journalist Broadcaster
+Pharmacy,260,Biology Physics Chemistry,Pharmacy,5 Years,Pharmacist Drug-Researcher
+Architecture,230,Mathematics Physics Technical-Drawing,Environmental Design,4 Years,Architect Urban-Planner
+Nursing,250,Biology Physics Chemistry,Clinical Sciences,5 Years,Nurse Health-Administrator
+Cyber Security,230,Mathematics Physics English,Science,4 Years,Security-Analyst Ethical-Hacker
+Data Science,235,Mathematics Physics English,Science,4 Years,Data-Analyst AI-Engineer
+Microbiology,200,Biology Physics Chemistry,Science,4 Years,Lab-Technician Researcher
+Biochemistry,210,Biology Physics Chemistry,Science,4 Years,Biochemist Forensic-Scientist
+Agriculture,180,Chemistry Biology Agric-Science,Agriculture,5 Years,Farm-Manager Agronomist
+English,200,Literature Government English,Arts,4 Years,Editor Writer Teacher
+History,190,Literature Government History,Arts,4 Years,Historian Archivist
+Political Science,210,Government Economics English,Social Sciences,4 Years,Politician Policy-Analyst
+Sociology,200,Government Economics English,Social Sciences,4 Years,Social-Worker HR-Manager
+Psychology,210,Biology Economics Mathematics,Social Sciences,4 Years,Psychologist Counselor
+Dentistry,270,Biology Physics Chemistry,Clinical Sciences,6 Years,Dentist Oral-Surgeon
+Veterinary Medicine,240,Biology Physics Chemistry,Veterinary Medicine,6 Years,Veterinarian Animal-Surgeon
+Petroleum Engineering,250,Mathematics Physics Chemistry,Technology,5 Years,Petroleum Engineer
+Theatre Arts,200,Literature English CRS,Arts,4 Years,Actor Director Media-Manager
+Industrial Chemistry,200,Chemistry Physics Mathematics,Science,4 Years,Industrial-Chemist Quality-Control
+Food Technology,210,Chemistry Biology Physics,Technology,5 Years,Food-Technologist Quality-Assurance
+Banking and Finance,210,Mathematics Economics Commerce,Economics,4 Years,Banker Investment-Banker
+Physiotherapy,250,Biology Physics Chemistry,Clinical Sciences,5 Years,Physiotherapist Sports-Medic

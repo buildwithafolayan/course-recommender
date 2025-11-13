@@ -1,48 +1,215 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>UI Course Recommender</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>University of Ibadan Recommender</title>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
-        body { background-color: #f8f9fa; padding-top: 50px; }
-        .container { max-width: 600px; background: white; padding: 30px; border-radius: 10px; shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        :root {
+            --ui-blue: #003366;
+            --ui-gold: #D4AF37;
+        }
+        body { 
+            background-color: #f4f6f9; 
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Navbar */
+        .navbar { background-color: var(--ui-blue); }
+        .navbar-brand { font-weight: bold; color: white !important; letter-spacing: 0.5px; }
+        
+        /* Main Content Wrapper */
+        .content-wrapper { flex: 1; }
+
+        /* Cards */
+        .main-card { border: none; border-radius: 15px; overflow: hidden; }
+        .card-header-custom { background-color: var(--ui-blue); color: white; padding: 20px; }
+        
+        /* Result Cards (Mobile Optimized) */
+        .course-card { 
+            border: 1px solid #e0e0e0;
+            border-left: 5px solid var(--ui-blue); 
+            border-radius: 10px;
+            background: white;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .course-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        
+        /* Loader */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        /* Footer */
+        footer { background: var(--ui-blue); color: white; padding: 20px 0; margin-top: 40px; }
+        footer a { color: var(--ui-gold); text-decoration: none; }
     </style>
 </head>
 <body>
 
-<div class="container shadow">
-    <h2 class="text-center text-primary">🎓 Course Recommender</h2>
-    <p class="text-center">Find your perfect course at University of Ibadan</p>
-    <hr>
+    <div id="loading-overlay">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+        <p class="mt-3 fw-bold text-dark">Checking Admission Requirements...</p>
+    </div>
 
-    <form method="POST" action="/">
-        <div class="mb-3">
-            <label class="form-label">Enter your JAMB Score:</label>
-            <input type="number" name="jamb" class="form-control" placeholder="e.g. 250" required>
+    <nav class="navbar navbar-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-university me-2"></i> University of Ibadan Recommender
+            </a>
         </div>
+    </nav>
 
-        <div class="mb-3">
-            <label class="form-label">Your Core Subject Strength:</label>
-            <select name="subject" class="form-select">
-                <option value="Physics">Physics</option>
-                <option value="Literature">Literature</option>
-                <option value="Economics">Economics</option>
-                <option value="Biology">Biology</option>
-                <option value="Government">Government</option>
-            </select>
+    <div class="content-wrapper container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                
+                <div class="card main-card shadow-sm mb-5">
+                    <div class="card-header-custom text-center">
+                        <h4><i class="fas fa-search me-2"></i> Course Finder</h4>
+                        <p class="mb-0 small op-75">Official Admission Helper</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="POST" action="/" onsubmit="showLoader()">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold text-secondary">JAMB Score</label>
+                                    <input type="number" name="jamb" class="form-control" placeholder="e.g. 250" required min="0" max="400">
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold text-secondary">Best Subject</label>
+                                    <select name="subject" class="form-select">
+                                        <option value="Physics">Physics</option>
+                                        <option value="Mathematics">Mathematics</option>
+                                        <option value="Chemistry">Chemistry</option>
+                                        <option value="Biology">Biology</option>
+                                        <option value="Literature">Literature</option>
+                                        <option value="Government">Government</option>
+                                        <option value="Economics">Economics</option>
+                                        <option value="Commerce">Commerce</option>
+                                        <option value="Agric-Science">Agric Science</option>
+                                        <option value="History">History</option>
+                                        <option value="CRS">CRS / IRS</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold text-secondary">Preferred Faculty</label>
+                                    <select name="faculty" class="form-select">
+                                        <option value="All">All Faculties</option>
+                                        {% for fac in faculties %}
+                                            <option value="{{ fac }}">{{ fac }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100 mt-4 py-2 fw-bold shadow-sm" style="background-color: var(--ui-blue); border: none;">
+                                Check Eligibility
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                {% if results is not none %}
+                    <h5 class="mb-3 text-secondary"><i class="fas fa-list-ul me-2"></i> Recommended Courses</h5>
+                    
+                    {% if results|length == 0 %}
+                        <div class="alert alert-danger shadow-sm rounded-3 text-center p-4">
+                            <i class="fas fa-exclamation-circle fa-2x mb-2"></i><br>
+                            <strong>No matches found.</strong><br>
+                            Your score might be too low for this faculty, or you need different subjects.
+                        </div>
+                    {% else %}
+                        <div class="row">
+                            {% for course in results %}
+                            <div class="col-12 mb-3">
+                                <div class="course-card p-3 d-flex justify-content-between align-items-center" 
+                                     data-bs-toggle="modal" 
+                                     data-bs-target="#modal-{{ loop.index }}">
+                                    
+                                    <div>
+                                        <h5 class="mb-0 text-primary fw-bold">{{ course.course_name }}</h5>
+                                        <small class="text-muted">{{ course.faculty }}</small>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                        Details <i class="fas fa-chevron-right ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="modal fade" id="modal-{{ loop.index }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header" style="background-color: var(--ui-blue); color: white;">
+                                            <h5 class="modal-title fw-bold">{{ course.course_name }}</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item">
+                                                    <i class="fas fa-university text-warning me-2"></i> <b>Faculty:</b> {{ course.faculty }}
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <i class="fas fa-clock text-success me-2"></i> <b>Duration:</b> {{ course.duration }}
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <i class="fas fa-check-circle text-danger me-2"></i> <b>Cut-off Mark:</b> {{ course.min_jamb }}
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <i class="fas fa-book-open text-info me-2"></i> <b>Compulsory Subjects:</b><br> 
+                                                    <span class="text-muted ms-4">{{ course.required_subjects }}</span>
+                                                </li>
+                                                <li class="list-group-item bg-light">
+                                                    <i class="fas fa-briefcase text-dark me-2"></i> <b>Career Opportunities:</b><br>
+                                                    <span class="small text-dark ms-4">{{ course.careers }}</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endif %}
+
+            </div>
         </div>
+    </div>
 
-        <button type="submit" class="btn btn-primary w-100">Find My Course</button>
-    </form>
-
-    {% if results is not none %}
-        <div class="mt-4">
-            <h4 class="text-success">Recommended for You:</h4>
-            {{ results | safe }}
+    <footer class="text-center">
+        <div class="container">
+            <p class="mb-0">&copy; 2025 Computer Science Department, University of Ibadan.</p>
+            <small class="text-white-50">Final Year Project</small>
         </div>
-    {% endif %}
+    </footer>
 
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showLoader() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+    </script>
 
 </body>
 </html>
