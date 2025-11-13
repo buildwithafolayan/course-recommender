@@ -10,8 +10,8 @@
     
     <style>
         :root {
-            --ui-blue: #003366;
-            --ui-gold: #D4AF37;
+            --ui-blue: #003366; /* Official UI Blue */
+            --ui-gold: #D4AF37; /* Gold Accent */
         }
         body { 
             background-color: #f4f6f9; 
@@ -43,6 +43,20 @@
         }
         .course-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         
+        /* WhatsApp Button Styling */
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        .btn-whatsapp:hover { background-color: #128C7E; color: white; }
+
         /* Loader */
         #loading-overlay {
             display: none;
@@ -57,7 +71,6 @@
         
         /* Footer */
         footer { background: var(--ui-blue); color: white; padding: 20px 0; margin-top: 40px; }
-        footer a { color: var(--ui-gold); text-decoration: none; }
     </style>
 </head>
 <body>
@@ -128,7 +141,22 @@
                 </div>
 
                 {% if results is not none %}
-                    <h5 class="mb-3 text-secondary"><i class="fas fa-list-ul me-2"></i> Recommended Courses</h5>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-secondary mb-0"><i class="fas fa-list-ul me-2"></i> Recommended Courses</h5>
+                        
+                        {% if results|length > 0 %}
+                        <form action="/download" method="POST" target="_blank">
+                            <input type="hidden" name="jamb" value="{{ request.form['jamb'] }}">
+                            <input type="hidden" name="subject" value="{{ request.form['subject'] }}">
+                            <input type="hidden" name="faculty" value="{{ request.form['faculty'] }}">
+                            
+                            <button type="submit" class="btn btn-outline-dark btn-sm shadow-sm">
+                                <i class="fas fa-file-pdf me-1 text-danger"></i> Download Slip
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
                     
                     {% if results|length == 0 %}
                         <div class="alert alert-danger shadow-sm rounded-3 text-center p-4">
@@ -148,9 +176,20 @@
                                         <h5 class="mb-0 text-primary fw-bold">{{ course.course_name }}</h5>
                                         <small class="text-muted">{{ course.faculty }}</small>
                                     </div>
-                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                                        Details <i class="fas fa-chevron-right ms-1"></i>
-                                    </button>
+
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <a href="https://wa.me/?text=I%20am%20qualified%20to%20study%20{{ course.course_name }}%20at%20UI!%20Checked%20via%20UI%20Recommender." 
+                                           class="btn-whatsapp rounded-circle shadow-sm" 
+                                           target="_blank" 
+                                           title="Share on WhatsApp"
+                                           onclick="event.stopPropagation()">
+                                            <i class="fab fa-whatsapp"></i>
+                                        </a>
+
+                                        <button class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                            Details
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
