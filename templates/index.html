@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UI Course Recommender</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f8f9fa; padding-top: 50px; }
+        .container { max-width: 600px; background: white; padding: 30px; border-radius: 10px; shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+<div class="container shadow">
+    <h2 class="text-center text-primary">🎓 Course Recommender</h2>
+    <p class="text-center">Find your perfect course at University of Ibadan</p>
+    <hr>
+
+    <form method="POST" action="/">
+        <div class="mb-3">
+            <label class="form-label">Enter your JAMB Score:</label>
+            <input type="number" name="jamb" class="form-control" placeholder="e.g. 250" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Your Core Subject Strength:</label>
+            <select name="subject" class="form-select">
+                <option value="Physics">Physics</option>
+                <option value="Literature">Literature</option>
+                <option value="Economics">Economics</option>
+                <option value="Biology">Biology</option>
+                <option value="Government">Government</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Find My Course</button>
+    </form>
+
+    {% if results is not none %}
+        <div class="mt-4">
+            <h4 class="text-success">Recommended for You:</h4>
+            {{ results | safe }}
+        </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

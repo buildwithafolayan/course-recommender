@@ -1,0 +1,11 @@
+course_name,min_jamb,required_subjects,faculty
+Computer Science,230,Mathematics Physics English,Science
+Medicine and Surgery,280,Biology Physics Chemistry,Clinical Sciences
+Law,250,Literature Government English,Law
+Mechanical Engineering,240,Mathematics Physics Chemistry,Technology
+Accounting,220,Mathematics Economics English,Social Sciences
+Mass Communication,210,Literature Government English,Arts
+Pharmacy,260,Biology Physics Chemistry,Pharmacy
+Economics,220,Mathematics Economics English,Economics
+Architecture,230,Mathematics Physics Technical-Drawing,Environmental Design
+Nursing,250,Biology Physics Chemistry,Clinical Sciences
