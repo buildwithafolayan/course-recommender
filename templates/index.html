@@ -7,163 +7,278 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        :root { --ui-blue: #003366; --ui-gold: #D4AF37; }
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
-        .navbar { background-color: var(--ui-blue); }
-        .navbar-brand { font-weight: bold; color: white !important; }
-        .course-card { border-left: 5px solid var(--ui-blue); border-radius: 10px; background: white; transition: transform 0.2s; cursor: pointer; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .course-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .btn-whatsapp { background-color: #25D366; color: white; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; text-decoration: none; }
-        
-        /* Chatbot */
-        #chat-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--ui-blue); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        #chat-window { display: none; position: fixed; bottom: 100px; right: 30px; width: 320px; height: 400px; background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); z-index: 999; flex-direction: column; overflow: hidden; }
-        
-        /* Mobile Optimization for Chatbot */
-        @media (max-width: 480px) {
-            #chat-window {
-                width: 90%;
-                right: 5%;
-                bottom: 100px;
-            }
+        :root { 
+            --ui-blue: #003366; 
+            --ui-gold: #D4AF37; 
+            --light-gray: #f4f6f9;
         }
 
+        body { 
+            background-color: var(--light-gray); 
+            font-family: 'Segoe UI', sans-serif; 
+            min-height: 100vh;
+        }
+
+        /* --- NEW: Background Watermark --- */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            /* --- FIXED: Changed to use Flask's url_for --- */
+            background-image: url("{{ url_for('static', filename='ui_logo.png') }}");
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 350px;
+            opacity: 0.04;
+        }
+
+        /* --- NEW: Navbar with Logo --- */
+        .navbar { 
+            background-color: white; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            /* --- NEW: Added z-index for floating header --- */
+            z-index: 1020; /* Bootstrap's default z-index for sticky elements is often around this */
+        }
+        .navbar-brand { 
+            font-weight: 700; 
+            color: var(--ui-blue) !important; 
+        }
+        .navbar-brand img {
+            height: 40px; /* Adjust logo height */
+            margin-right: 10px;
+        }
+
+        /* --- NEW: "Frosted Glass" Form Card --- */
+        .form-card {
+            background: rgba(255, 255, 255, 0.85); /* Semi-transparent white */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); /* For Safari */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 51, 102, 0.1);
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .form-card { padding: 1.5rem; }
+        }
+
+        /* --- NEW: Gold Button --- */
+        .btn-submit-custom {
+            background: var(--ui-gold);
+            color: var(--ui-blue);
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 0.75rem;
+            border: 0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-submit-custom:hover {
+            background: var(--ui-blue);
+            color: var(--ui-gold);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0, 51, 102, 0.2);
+        }
+
+        /* --- NEW: Result Column Animation --- */
+        #results-column {
+            animation: slideInFromRight 0.6s ease-out forwards;
+        }
+        @keyframes slideInFromRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* --- NEW: Redesigned Course Card --- */
+        .course-card-new {
+            background: #ffffff;
+            border-left: 5px solid var(--ui-gold);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            padding: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .course-card-new:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 51, 102, 0.1);
+        }
+        .course-card-new h5 {
+            color: var(--ui-blue);
+            font-weight: 700; /* Bolder title */
+            margin-bottom: 2px;
+        }
+        .course-card-new small {
+            font-size: 0.9rem;
+        }
+        .course-card-new .btn-view-custom {
+            background: var(--ui-blue);
+            color: white;
+            border-radius: 50px; /* Pill shape */
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 6px 16px;
+            transition: all 0.2s ease;
+        }
+        .course-card-new:hover .btn-view-custom {
+            background: var(--ui-gold);
+            color: var(--ui-blue);
+        }
+
+
+        /* Chat Button (Unchanged) */
+        .btn-whatsapp { background-color: #25D366; color: white; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; text-decoration: none; }
+        #chat-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--ui-blue); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; cursor: pointer; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #chat-window { display: none; position: fixed; bottom: 100px; right: 30px; width: 320px; height: 400px; background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); z-index: 999; flex-direction: column; overflow: hidden; }
+        @media (max-width: 480px) { #chat-window { width: 90%; right: 5%; bottom: 100px; } }
         .chat-header { background: var(--ui-blue); color: white; padding: 10px 15px; display: flex; justify-content: space-between; }
         .chat-body { flex: 1; padding: 10px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 8px; }
         .user-msg { background: var(--ui-blue); color: white; padding: 8px 12px; border-radius: 15px 15px 0 15px; align-self: flex-end; max-width: 80%; font-size: 0.9rem; }
         .bot-msg { background: #e9ecef; color: black; padding: 8px 12px; border-radius: 15px 15px 15px 0; align-self: flex-start; max-width: 80%; font-size: 0.9rem; }
-        
-        /* Loader */
         #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); z-index: 2000; align-items: center; justify-content: center; flex-direction: column; }
+    
     </style>
 </head>
 <body>
 
     <div id="loading-overlay">
-        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
-        <p class="mt-3 fw-bold">Processing Admission Data...</p>
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem; color: var(--ui-blue)!important;"></div>
+        <p class="mt-3 fw-bold" style="color: var(--ui-blue);">Processing Admission Data...</p>
     </div>
 
-    <nav class="navbar navbar-dark shadow-sm">
+    <nav class="navbar navbar-light shadow-sm sticky-top"> 
         <div class="container">
-            <a class="navbar-brand" href="#"><i class="fas fa-university me-2"></i> UI Recommender System</a>
+            <a class="navbar-brand" href="#">
+                <img src="{{ url_for('static', filename='image_a44c04.png') }}" alt="UI Logo">
+                UI Course Recommender
+            </a>
         </div>
     </nav>
 
     <div class="container mt-5 flex-grow-1">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                
-                <div class="card shadow-sm mb-5 border-0">
-                    <div class="card-header text-center text-white" style="background: var(--ui-blue);">
-                        <h4 class="mb-0 py-2">Find Your Dream Course</h4>
-                    </div>
-                    <div class="card-body p-4">
-                        <form method="POST" action="/" onsubmit="document.getElementById('loading-overlay').style.display='flex'">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">JAMB Score</label>
-                                    <input type="number" name="jamb" class="form-control" placeholder="e.g. 240" required value="{{ request.form.jamb }}">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">Strongest Subject</label>
-                                    <select name="subject" class="form-select">
-                                        <option value="Physics">Physics</option>
-                                        <option value="Mathematics">Mathematics</option>
-                                        <option value="Chemistry">Chemistry</option>
-                                        <option value="Biology">Biology</option>
-                                        <option value="Literature">Literature</option>
-                                        <option value="Government">Government</option>
-                                        <option value="Economics">Economics</option>
-                                        <option value="Agric-Science">Agric Science</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">Faculty</label>
-                                    <select name="faculty" class="form-select">
-                                        <option value="All">All Faculties</option>
-                                        {% for fac in faculties %}
-                                            <option value="{{ fac }}" {% if request.form.faculty == fac %}selected{% endif %}>{{ fac }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
+        <div class="row justify-content-center g-5">
+            
+            <div class="{% if results is not none and results|length > 0 %}col-lg-5{% else %}col-lg-7{% endif %}">
+                <div class="form-card">
+                    <h2 class="text-center fw-bold mb-1" style="color: var(--ui-blue);">Find Your Course</h2>
+                    <p class="text-center text-muted mb-4">Enter your details to see your eligibility.</p>
+                    
+                    <form method="POST" action="/" onsubmit="document.getElementById('loading-overlay').style.display='flex'">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">JAMB Score</label>
+                                <input type="number" name="jamb" class="form-control" placeholder="e.g. 240" required value="{{ request.form.jamb }}">
                             </div>
-                            <button type="submit" class="btn btn-primary w-100 mt-4 fw-bold" style="background: var(--ui-blue);">Check Eligibility</button>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Strongest Subject</label>
+                                <select name="subject" class="form-select">
+                                    <option value="Physics">Physics</option>
+                                    <option value="Mathematics">Mathematics</option>
+                                    <option value="Chemistry">Chemistry</option>
+                                    <option value="Biology">Biology</option>
+                                    <option value="Literature">Literature</option>
+                                    <option value="Government">Government</option>
+                                    <option value="Economics">Economics</option>
+                                    <option value="Agric-Science">Agric Science</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Faculty</label>
+                                <select name="faculty" class="form-select">
+                                    <option value="All">All Faculties</option>
+                                    {% for fac in faculties %}
+                                        <option value="{{ fac }}" {% if request.form.faculty == fac %}selected{% endif %}>{{ fac }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-submit-custom w-100 mt-4">Check Eligibility</button>
+                    </form>
+                </div>
+            </div>
+
+            {% if results is not none %}
+            <div class="col-lg-7" id="results-column">
+                
+                {% if status == 'alternative' %}
+                    <div class="alert alert-warning border-warning shadow-sm">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Exact match not found.</strong> Here are other courses you qualify for.
+                    </div>
+                {% elif status == 'not_found' %}
+                    <div class="alert alert-danger text-center p-4 shadow-sm">
+                        <i class="fas fa-times-circle fa-2x mb-2"></i><br>
+                        <strong>No Courses Found.</strong><br>
+                        Your JAMB score might be below the requirements, or no courses matched your criteria.
+                    </div>
+                {% endif %}
+
+                {% if results|length > 0 %}
+                    
+                    <div class="card mb-4 shadow-sm border-0 rounded-3" id="results-visuals">
+                        <div class="card-body">
+                            <h6 class="text-primary fw-bold">Visual Analysis</h6>
+                            <canvas id="scoreChart" style="max-height: 200px;"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0 fw-bold" style="color: var(--ui-blue)">Recommended Courses</h4>
+                        <form action="/download" method="POST" target="_blank">
+                            <input type="hidden" name="jamb" value="{{ request.form.jamb }}">
+                            <input type="hidden" name="subject" value="{{ request.form.subject }}">
+                            <input type="hidden" name="faculty" value="{{ request.form.faculty }}">
+                            <button class="btn btn-outline-danger btn-sm"><i class="fas fa-file-pdf me-1"></i> Download Slip</button>
                         </form>
                     </div>
-                </div>
 
-                {% if results is not none %}
-                    
-                    {% if status == 'alternative' %}
-                        <div class="alert alert-warning border-warning shadow-sm">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Exact match not found.</strong> We couldn't find a course matching your exact preferences, but here are other courses you qualify for based on your JAMB score.
+                    {% for course in results %}
+                    <div class="course-card-new" data-bs-toggle="modal" data-bs-target="#modal-{{ loop.index }}">
+                        <div>
+                            <h5>{{ course.course_name }}</h5>
+                            <small class="text-muted">{{ course.faculty }} | Cut-off: <b>{{ course.min_jamb }}</b></small>
                         </div>
-                    {% elif status == 'not_found' %}
-                        <div class="alert alert-danger text-center p-4 shadow-sm">
-                            <i class="fas fa-times-circle fa-2x mb-2"></i><br>
-                            <strong>No Courses Found.</strong><br>
-                            Your JAMB score might be below the minimum requirement (180) for the courses in our database, or no courses matched your criteria.
+                        <div class="d-flex gap-2 align-items-center">
+                            <a href="https://wa.me/?text=I%20qualify%20for%20{{ course.course_name }}!" class="btn-whatsapp" target="_blank" onclick="event.stopPropagation()"><i class="fab fa-whatsapp"></i></a>
+                            <button class="btn btn-view-custom">View</button>
                         </div>
-                    {% endif %}
+                    </div>
 
-                    {% if results|length > 0 %}
-                        
-                        <div class="card mb-4 shadow-sm border-0">
-                            <div class="card-body">
-                                <h6 class="text-primary fw-bold">Visual Analysis</h6>
-                                <canvas id="scoreChart" style="max-height: 200px;"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end mb-3">
-                            <form action="/download" method="POST" target="_blank">
-                                <input type="hidden" name="jamb" value="{{ request.form.jamb }}">
-                                <input type="hidden" name="subject" value="{{ request.form.subject }}">
-                                <input type="hidden" name="faculty" value="{{ request.form.faculty }}">
-                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-file-pdf me-1"></i> Download Slip</button>
-                            </form>
-                        </div>
-
-                        {% for course in results %}
-                        <div class="course-card p-3 d-flex justify-content-between align-items-center" data-bs-toggle="modal" data-bs-target="#modal-{{ loop.index }}">
-                            <div>
-                                <h5 class="mb-0 text-primary fw-bold">{{ course.course_name }}</h5>
-                                <small class="text-muted">{{ course.faculty }} | Cut-off: <b>{{ course.min_jamb }}</b></small>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <a href="https://wa.me/?text=I%20qualify%20for%20{{ course.course_name }}!" class="btn-whatsapp" target="_blank"><i class="fab fa-whatsapp"></i></a>
-                                <button class="btn btn-sm btn-outline-primary rounded-pill">View</button>
-                            </div>
-                        </div>
-
-                        <div class="modal fade" id="modal-{{ loop.index }}" tabindex="-1">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header bg-primary text-white">
-                                        <h5 class="modal-title">{{ course.course_name }}</h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <p><b>Faculty:</b> {{ course.faculty }}</p>
-                                        <p><b>Duration:</b> {{ course.duration }}</p>
-                                        <p><b>Required Subjects:</b> {{ course.required_subjects }}</p>
-                                        <div class="bg-light p-2 rounded border">
-                                            <small><b>Career Paths:</b> {{ course.careers }}</small>
-                                        </div>
+                    <div class="modal fade" id="modal-{{ loop.index }}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content rounded-3">
+                                <div class="modal-header text-white" style="background: var(--ui-blue);">
+                                    <h5 class="modal-title">{{ course.course_name }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p><b>Faculty:</b> {{ course.faculty }}</p>
+                                    <p><b>Duration:</b> {{ course.duration }}</p>
+                                    <p><b>Required Subjects:</b> {{ course.required_subjects }}</p>
+                                    <div class="bg-light p-3 rounded border">
+                                        <small><b>Career Paths:</b> {{ course.careers }}</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        {% endfor %}
-                    {% endif %}
+                    </div>
+                    {% endfor %}
                 {% endif %}
-            </div>
+            {% endif %}
+            
         </div>
     </div>
 
@@ -179,6 +294,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Chat functions (Unchanged)
         function toggleChat() {
             const w = document.getElementById('chat-window');
             w.style.display = w.style.display === 'flex' ? 'none' : 'flex';
@@ -188,10 +304,8 @@
             const input = document.getElementById('chat-input');
             const msg = input.value.trim();
             if(!msg) return;
-            
             addMsg(msg, 'user-msg');
             input.value = '';
-
             fetch('/chat', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -199,38 +313,49 @@
             })
             .then(res => res.json())
             .then(data => addMsg(data.reply, 'bot-msg'))
-            .catch(() => addMsg("Connection error. Please try again later.", 'bot-msg')); // Improved error message
+            .catch(() => addMsg("Connection error. Please try again later.", 'bot-msg'));
         }
 
-        // REPLACE THIS FUNCTION 👇
         function addMsg(text, className) {
             const div = document.createElement('div');
             div.className = className;
-
             if (className === 'bot-msg') {
-                // For bot messages, parse the markdown from Gemini into HTML
-                // This uses the marked.js library you just added
                 div.innerHTML = marked.parse(text);
             } else {
-                // For user messages, just use textContent. This is safer.
                 div.textContent = text;
             }
-
             const chatBody = document.getElementById('chat-body');
             chatBody.appendChild(div);
-            // Scroll to the bottom to see the new message
             chatBody.scrollTop = chatBody.scrollHeight;
         }
 
-        // Graph Logic
+        // --- NEW: Updated Auto-Scroll and Chat ---
+        document.addEventListener("DOMContentLoaded", function() {
+            // Auto-scroll to results if they exist
+            {% if results is not none and results|length > 0 %}
+                // We scroll to the chart/visuals card
+                const resultsElement = document.getElementById('results-visuals');
+                if (resultsElement) {
+                    resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            {% endif %}
+
+            // Proactive chat welcome
+            setTimeout(() => {
+                const chatBody = document.getElementById('chat-body');
+                if (chatBody && chatBody.children.length === 1) {
+                    addMsg("Need help? Ask me about JAMB subjects, cut-offs, or career paths.", 'bot-msg');
+                }
+            }, 5000);
+        });
+
+        // Graph Logic (Updated with new colors)
         {% if results is not none and results|length > 0 %}
             const ctx = document.getElementById('scoreChart').getContext('2d');
             const userScore = {{ request.form.jamb }};
-            // Limit to top 5 results for cleaner chart
             const labels = [{% for c in results[:5] %} "{{ c.course_name }}", {% endfor %}];
             const data = [{% for c in results[:5] %} {{ c.min_jamb }}, {% endfor %}];
             
-            // Dynamic Scale
             const minVal = Math.min(...data, userScore) - 10;
             const maxVal = Math.max(...data, userScore) + 10;
 
@@ -239,14 +364,18 @@
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Cut-off', data: data, backgroundColor: '#D4AF37' },
+                        { 
+                            label: 'Cut-off', 
+                            data: data, 
+                            backgroundColor: '#D4AF37' /* --- NEW: Gold Bars --- */
+                        },
                         { 
                             label: 'Your Score', 
                             data: Array(labels.length).fill(userScore), 
                             type: 'line', 
-                            borderColor: '#003366', 
+                            borderColor: '#003366', /* --- NEW: Blue Line --- */
                             borderWidth: 3,
-                            fill: false // Ensure line is not filled
+                            fill: false
                         }
                     ]
                 },
@@ -255,19 +384,14 @@
                     maintainAspectRatio: false,
                     scales: { 
                         y: { 
-                            beginAtZero: false, // Allow scale to start above zero if minVal is higher
-                            min: Math.max(0, minVal), // Ensure min is not negative
+                            beginAtZero: false,
+                            min: Math.max(0, minVal),
                             max: maxVal 
                         } 
                     },
                     plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Your JAMB Score vs. Course Cut-offs'
-                        }
+                        legend: { position: 'top' },
+                        title: { display: true, text: 'Your JAMB Score vs. Course Cut-offs' }
                     }
                 }
             });

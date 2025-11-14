@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import traceback
 
-# Load environment variables from .env file (for local development)
 load_dotenv()
 
 API_KEY = os.getenv("GEMINI_API_KEY")
@@ -20,8 +19,6 @@ SYSTEM_INSTRUCTION = (
     "Keep your answers helpful and concise."
 )
 
-# --- GEMINI API Configuration and Model Loading ---
-# Added extensive logging for debugging, especially in production
 print(f"DEBUG: Initial check - Is API Key loaded? {API_KEY is not None}. Length of key: {len(API_KEY) if API_KEY else 0}")
 if not API_KEY:
     print("CRITICAL: GEMINI_API_KEY is not loaded from .env or environment variables. Please check your config.")
@@ -46,29 +43,26 @@ try:
     print(f"DEBUG: Gemini model '{MODEL_NAME}' loaded successfully.")
 except ValueError as e:
     print(f"CRITICAL ERROR: Configuration failed for Gemini API - {e}")
-    traceback.print_exc() # Print full traceback for ValueErrors during startup
+    traceback.print_exc() 
 except Exception as e:
     print(f"CRITICAL ERROR: Could not configure Gemini API or load model - {e}")
-    traceback.print_exc() # Print full traceback for other exceptions during startup
+    traceback.print_exc() 
 
-# --- Flask App Initialization ---
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "default_secret_key")
 
-# --- Course Data Loading ---
 try:
     COURSE_DATA = pd.read_csv('courses.csv')
     COURSE_DATA['required_subjects'] = COURSE_DATA['required_subjects'].astype(str)
     print(f"DEBUG: Course database loaded successfully: {len(COURSE_DATA)} courses found.")
 except FileNotFoundError:
     print("CRITICAL ERROR: courses.csv not found. Please ensure it's in the same directory as app.py.")
-    COURSE_DATA = pd.DataFrame() # Ensure COURSE_DATA is a DataFrame even on error
+    COURSE_DATA = pd.DataFrame() 
 except Exception as e:
     print(f"CRITICAL ERROR: Failed to load courses.csv. {e}")
     traceback.print_exc()
-    COURSE_DATA = pd.DataFrame() # Ensure COURSE_DATA is a DataFrame even on error
+    COURSE_DATA = pd.DataFrame() 
 
-# --- Recommendation Logic ---
 def recommend_courses(jamb_score, preferred_subject, preferred_faculty):
     """
     Filters the main COURSE_DATA DataFrame based on user's criteria.
@@ -76,18 +70,15 @@ def recommend_courses(jamb_score, preferred_subject, preferred_faculty):
     """
     if COURSE_DATA.empty:
         print("DEBUG: COURSE_DATA is empty in recommend_courses function.")
-        return pd.DataFrame(), 'not_found' # If no data, nothing can be found
+        return pd.DataFrame(), 'not_found' 
 
     df = COURSE_DATA.copy()
 
-    # Filter by JAMB score
     mask_score = df['min_jamb'] <= jamb_score
 
-    # Filter by preferred subject (case-insensitive)
-    # Ensure preferred_subject is treated as a string for contains()
+    
     mask_subject = df['required_subjects'].astype(str).str.contains(preferred_subject, case=False, na=False)
 
-    # Filter by faculty if 'All' is not selected
     if preferred_faculty.lower() != 'all':
         mask_faculty = df['faculty'].astype(str).str.lower() == preferred_faculty.lower()
         combined_mask = mask_score & mask_subject & mask_faculty
@@ -97,7 +88,6 @@ def recommend_courses(jamb_score, preferred_subject, preferred_faculty):
     results_df = df[combined_mask]
 
     if results_df.empty:
-        # If no exact match, try to find courses based *only* on JAMB score
         alternative_mask = df['min_jamb'] <= jamb_score
         alternative_df = df[alternative_mask].sort_values(by='min_jamb', ascending=False)
         if not alternative_df.empty:
@@ -113,7 +103,6 @@ def recommend_courses(jamb_score, preferred_subject, preferred_faculty):
 
     return results_df, status
 
-# --- PDF Generation ---
 class PDF(FPDF):
     """Custom PDF class to create header and footer for the recommendation slip."""
     def header(self):
@@ -154,14 +143,12 @@ def generate_pdf_slip(df_results, jamb, subject, faculty):
             pdf.set_font('Arial', 'B', 11)
             pdf.cell(0, 8, f"{row['course_name']} (Cut-off: {row['min_jamb']})", 0, 1)
             pdf.set_font('Arial', '', 9)
-            # Use multi_cell for detailed course info to handle wrapping
             pdf.multi_cell(0, 5, f"  Faculty: {row['faculty']}\n  Duration: {row['duration']}\n  Required Subjects: {row['required_subjects']}\n  Careers: {row['careers']}\n")
-            pdf.ln(3) # Add small line break between courses in PDF
+            pdf.ln(3) 
 
     print(f"DEBUG: PDF slip generated for JAMB {jamb}.")
     return pdf.output(dest='S').encode('latin-1')
 
-# --- Gemini AI Chatbot Function ---
 def get_gemini_response(user_message):
     """
     Generates a response from the Gemini API with specific context.
@@ -171,7 +158,6 @@ def get_gemini_response(user_message):
         print("DEBUG: Gemini model is None. Cannot generate content.")
         return "Sorry, the AI model is not available. This is a server issue. Please try again later."
     try:
-        # Added a longer timeout for generate_content
         response = model.generate_content(user_message, request_options={"timeout": 60}) # 60 seconds timeout
         if response and response.text:
             print(f"DEBUG: Gemini API responded to: '{user_message[:50]}...'")
@@ -181,17 +167,15 @@ def get_gemini_response(user_message):
             return "I received an empty response from the AI. Please try rephrasing or ask a different question."
     except Exception as e:
         print(f"ERROR: Gemini Error during content generation for message '{user_message[:50]}...': {e}")
-        traceback.print_exc() # Print full traceback for Gemini errors
+        traceback.print_exc()
         return "I'm having trouble connecting to my brain right now. Please try again in a moment. (Details logged on server)"
 
-# --- Flask Routes ---
 @app.route('/', methods=['GET', 'POST'])
 def index():
     """Handles the main page and the recommendation form submission."""
-    # Ensure faculties are populated even if COURSE_DATA is empty initially
     faculties = sorted(COURSE_DATA['faculty'].unique()) if not COURSE_DATA.empty else []
     results = None
-    search_status = 'pending' # Initial state for status
+    search_status = 'pending' 
 
     if request.method == 'POST':
         try:
@@ -239,8 +223,7 @@ def download():
     except Exception as e:
         print(f"PDF ERROR: Error generating PDF: {e}")
         traceback.print_exc()
-        return "Error generating PDF. Please try again or contact support.", 500 # Return a 500 status code for server error
-
+        return "Error generating PDF. Please try again or contact support.", 500 
 @app.route('/chat', methods=['POST'])
 def chat():
     """Handles the chatbot API requests."""
@@ -259,8 +242,5 @@ def chat():
         traceback.print_exc()
         return jsonify({"reply": "Sorry, the server ran into an internal error while processing your chat."}), 500
 
-# --- Main Application Runner ---
 if __name__ == '__main__':
-    # Use 0.0.0.0 for deployment to make the server accessible externally
-    # Use environment variable for PORT, default to 5000
     app.run(debug=True, host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
