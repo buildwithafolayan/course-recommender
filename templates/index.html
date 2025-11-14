@@ -90,7 +90,6 @@
                                     </select>
                                 </div>
                             </div>
-                            <!-- --- THIS IS THE FIX: Changed class.=" to class=" --- -->
                             <button type="submit" class="btn btn-primary w-100 mt-4 fw-bold" style="background: var(--ui-blue);">Check Eligibility</button>
                         </form>
                     </div>
@@ -103,11 +102,11 @@
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>Exact match not found.</strong> We couldn't find a course matching your exact preferences, but here are other courses you qualify for based on your JAMB score.
                         </div>
-                    {% elif status == 'none' %}
+                    {% elif status == 'not_found' %}
                         <div class="alert alert-danger text-center p-4 shadow-sm">
                             <i class="fas fa-times-circle fa-2x mb-2"></i><br>
                             <strong>No Courses Found.</strong><br>
-                            Your JAMB score might be below the minimum requirement (180) for the courses in our database.
+                            Your JAMB score might be below the minimum requirement (180) for the courses in our database, or no courses matched your criteria.
                         </div>
                     {% endif %}
 
@@ -198,7 +197,7 @@
             })
             .then(res => res.json())
             .then(data => addMsg(data.reply, 'bot-msg'))
-            .catch(() => addMsg("Connection error.", 'bot-msg'));
+            .catch(() => addMsg("Connection error. Please try again later.", 'bot-msg')); // Improved error message
         }
 
         function addMsg(text, className) {
@@ -213,6 +212,7 @@
         {% if results is not none and results|length > 0 %}
             const ctx = document.getElementById('scoreChart').getContext('2d');
             const userScore = {{ request.form.jamb }};
+            // Limit to top 5 results for cleaner chart
             const labels = [{% for c in results[:5] %} "{{ c.course_name }}", {% endfor %}];
             const data = [{% for c in results[:5] %} {{ c.min_jamb }}, {% endfor %}];
             
@@ -226,11 +226,35 @@
                     labels: labels,
                     datasets: [
                         { label: 'Cut-off', data: data, backgroundColor: '#D4AF37' },
-                        { label: 'Your Score', data: Array(labels.length).fill(userScore), type: 'line', borderColor: '#003366', borderWidth: 3 }
+                        { 
+                            label: 'Your Score', 
+                            data: Array(labels.length).fill(userScore), 
+                            type: 'line', 
+                            borderColor: '#003366', 
+                            borderWidth: 3,
+                            fill: false // Ensure line is not filled
+                        }
                     ]
                 },
                 options: {
-                    scales: { y: { min: minVal, max: maxVal } }
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { 
+                        y: { 
+                            beginAtZero: false, // Allow scale to start above zero if minVal is higher
+                            min: Math.max(0, minVal), // Ensure min is not negative
+                            max: maxVal 
+                        } 
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Your JAMB Score vs. Course Cut-offs'
+                        }
+                    }
                 }
             });
         {% endif %}

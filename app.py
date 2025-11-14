@@ -7,89 +7,94 @@ import io
 import datetime
 from dotenv import load_dotenv
 import google.generativeai as genai
+import traceback 
 
-# --- 1. LOAD ENVIRONMENT VARIABLES & CONFIGURE GEMINI ---
+
 load_dotenv() 
 API_KEY = os.getenv("GEMINI_API_KEY") 
 
-# Define the bot's system instruction
 SYSTEM_INSTRUCTION = (
-    "You are a helpful university admissions assistant for the University of Ibadan (UI). "
+    "You are a helpful university university admissions assistant for the University of Ibadan (UI). "
     "Your main job is to answer questions about courses, faculties, and admission requirements at UI. "
     "Do not answer questions that are not related to academics or university life. "
     "Keep your answers helpful and concise."
 )
 
+print(f"DEBUG: Is API Key loaded? {API_KEY is not None}. Length of key: {len(API_KEY) if API_KEY else 0}")
+if not API_KEY:
+    print("CRITICAL: GEMINI_API_KEY is not loaded. Please check your .env file.")
 
-# --- ADD THIS DEBUG LINE ---
-print(f"DEBUG: Is API Key loaded? {API_KEY is not None}")
-# ---------------------------
+model = None 
 try:
-    # Configure the Gemini API
-    genai.configure(api_key=API_KEY)
-    # Pass system_instruction at creation time
-    model = genai.GenerativeModel(
-        'gemini-1.5-flash-latest',
-        system_instruction=SYSTEM_INSTRUCTION
+    if not API_KEY:
+        raise ValueError("GEMINI_API_KEY not found or is empty in environment variables.")
+    
+    genai.configure(
+        api_key=API_KEY,
+        client_options={"api_endpoint": "generativelanguage.googleapis.com"}
     )
-    print("Gemini model loaded successfully.")
+    
+    MODEL_NAME = 'gemini-2.5-flash' 
+    
+    model = genai.GenerativeModel(
+        MODEL_NAME, 
+        system_instruction=SYSTEM_INSTRUCTION,
+    )
+    print(f"Gemini model '{MODEL_NAME}' loaded successfully.")
+except ValueError as e:
+    print(f"CRITICAL ERROR: Configuration failed - {e}")
 except Exception as e:
-    print(f"CRITICAL ERROR: Could not configure Gemini. {e}")
-    model = None
-# ----------------------------------------------------
+    print(f"CRITICAL ERROR: Could not configure Gemini API or load model - {e}")
+    traceback.print_exc() 
 
-# This line creates 'app'
 app = Flask(__name__) 
-
-# Now this line can use 'app' without an error
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "default_secret_key")
 
-# --- 2. DATABASE LOADING ---
 try:
     COURSE_DATA = pd.read_csv('courses.csv')
     COURSE_DATA['required_subjects'] = COURSE_DATA['required_subjects'].astype(str)
     print(f"Database loaded successfully: {len(COURSE_DATA)} courses found.")
 except FileNotFoundError:
-    print("CRITICAL ERROR: courses.csv not found.")
+    print("CRITICAL ERROR: courses.csv not found. Please ensure it's in the same directory as app.py.")
+    COURSE_DATA = pd.DataFrame()
+except Exception as e:
+    print(f"CRITICAL ERROR: Failed to load courses.csv. {e}")
+    traceback.print_exc() 
     COURSE_DATA = pd.DataFrame()
 
-# --- 3. CORE RECOMMENDATION ENGINE ---
 def recommend_courses(jamb_score, preferred_subject, preferred_faculty):
     """
     Filters the main COURSE_DATA DataFrame based on user's criteria.
     """
     if COURSE_DATA.empty:
-        return pd.DataFrame(), 'none' # 'none' = database error
+        return pd.DataFrame(), 'none' 
 
     df = COURSE_DATA.copy()
 
-    # Apply base filters that are always required
     mask_score = df['min_jamb'] <= jamb_score
     mask_subject = df['required_subjects'].str.contains(preferred_subject, case=False, na=False)
 
-    # --- THIS IS THE FIX ---
-    # Only apply the faculty filter if the user selected a specific faculty
     if preferred_faculty.lower() != 'all':
         mask_faculty = df['faculty'].str.lower() == preferred_faculty.lower()
         combined_mask = mask_score & mask_subject & mask_faculty
     else:
-        # If "All Faculties" is chosen, don't filter by faculty
         combined_mask = mask_score & mask_subject
-    # ----------------------
-
+    
     results_df = df[combined_mask]
 
-    # Sort by JAMB score, descending
+    if results_df.empty:
+        alternative_mask = df['min_jamb'] <= jamb_score
+        alternative_df = df[alternative_mask].sort_values(by='min_jamb', ascending=False)
+        if not alternative_df.empty:
+            return alternative_df, 'alternative'
+        else:
+            return pd.DataFrame(), 'not_found' 
+
     results_df = results_df.sort_values(by='min_jamb', ascending=False)
-
-    status = 'found' if not results_df.empty else 'not_found'
-
-    return results_df, status
-    status = 'found' if not results_df.empty else 'not_found'
+    status = 'found'
     
     return results_df, status
 
-# --- 4. PDF GENERATION ---
 class PDF(FPDF):
     """Custom PDF class to create header and footer."""
     def header(self):
@@ -111,7 +116,6 @@ def generate_pdf_slip(df_results, jamb, subject, faculty):
     pdf = PDF()
     pdf.add_page()
     
-    # User Info Section
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(0, 10, 'Your Admission Profile', 0, 1)
     pdf.set_font('Arial', '', 10)
@@ -120,7 +124,6 @@ def generate_pdf_slip(df_results, jamb, subject, faculty):
     pdf.cell(0, 8, f'  Core Subject: {subject}', 0, 1)
     pdf.ln(10)
     
-    # Results Section
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(0, 10, 'Recommended Courses', 0, 1)
     pdf.set_font('Arial', '', 10)
@@ -135,32 +138,33 @@ def generate_pdf_slip(df_results, jamb, subject, faculty):
             pdf.multi_cell(0, 5, f"  Faculty: {row['faculty']}\n  Duration: {row['duration']}\n  Careers: {row['careers']}\n")
             pdf.ln(3)
 
-    # Return as bytes
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. GEMINI HELPER FUNCTION ---
 def get_gemini_response(user_message):
     """
     Generates a response from the Gemini API with specific context.
     """
     if model is None:
-        return "Sorry, the AI model is not available. Please check server logs."
+        print("DEBUG: Gemini model is None. Cannot generate content.")
+        return "Sorry, the AI model is not available. Please check server logs for critical errors during startup."
     try:
-        # We just send the user message directly.
-        # The system_instruction is already set in the model.
         response = model.generate_content(user_message)
-        return response.text
+        if response and response.text:
+            return response.text
+        else:
+            print(f"DEBUG: Gemini API returned an empty or non-text response. Raw response: {response}")
+            return "I received an empty response from the AI. Please try rephrasing or ask a different question."
     except Exception as e:
-        print(f"Gemini Error: {e}")
-        return "I'm having trouble connecting to my brain right now. Please try again."
+        print(f"ERROR: Gemini Error during content generation: {e}")
+        traceback.print_exc() 
+        return "I'm having trouble connecting to my brain right now. Please try again. (Details logged)"
 
-# --- 6. FLASK ROUTES ---
 @app.route('/', methods=['GET', 'POST'])
 def index():
     """Handles the main page and the recommendation form submission."""
     faculties = sorted(COURSE_DATA['faculty'].unique()) if not COURSE_DATA.empty else []
     results = None
-    search_status = 'pending' # 'pending', 'found', 'not_found', 'none'
+    search_status = 'pending' 
 
     if request.method == 'POST':
         try:
@@ -173,16 +177,15 @@ def index():
         
         except ValueError:
             results = []
-            # --- THIS IS THE FIX ---
-            # Changed 'none' to 'not_found' so the frontend shows a message
             search_status = 'not_found' 
-            # ----------------------
+            print("ERROR: Invalid JAMB score provided. Must be numeric.")
         except Exception as e:
-            print(f"Search Error: {e}")
+            print(f"SEARCH ERROR: {e}")
+            traceback.print_exc()
             results = []
             search_status = 'not_found'
 
-    return render_template('index.html', results=results, faculties=faculties, status=search_status)
+    return render_template('index.html', results=results, faculties=faculties, status=search_status, request_form=request.form)
 
 @app.route('/download', methods=['POST'])
 def download():
@@ -202,7 +205,8 @@ def download():
             download_name=f'ui_recommendation_slip_{jamb}.pdf'
         )
     except Exception as e:
-        print(f"PDF Error: {e}")
+        print(f"PDF ERROR: {e}")
+        traceback.print_exc()
         return "Error generating PDF."
 
 @app.route('/chat', methods=['POST'])
@@ -213,15 +217,13 @@ def chat():
         if not user_message:
             return jsonify({"reply": "Please say something!"})
         
-        # This now calls the function we defined above
         bot_reply = get_gemini_response(user_message) 
         
         return jsonify({"reply": bot_reply})
     except Exception as e:
-        print(f"Chat Error: {e}")
+        print(f"CHAT API ERROR: {e}")
+        traceback.print_exc()
         return jsonify({"reply": "Sorry, the server ran into an internal error."}), 500
 
-# --- 7. RUN THE APP ---
 if __name__ == '__main__':
-    # Set debug=False for production
     app.run(debug=True, host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
